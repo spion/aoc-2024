@@ -9,7 +9,7 @@ def safe_row [row] {
   ($links | get -i bad) == null and (($links | get -i lt) == null or ($links | get -i gt) == null)
 }
 
-cat | lines | split column -r '\s+' | each { values } | each { into int } | each {|row|
+cat | lines | split column -r '\s+' | each { values } | each { into int } | filter {|row|
     let row_indeces = 0.. | take ($row | length)
     let row_indexed = $row_indeces | zip $row
 
@@ -18,4 +18,4 @@ cat | lines | split column -r '\s+' | each { values } | each { into int } | each
         safe_row ($row_indexed | where {|el| $el.0 != $ix} | each {|el| $el.1})
       }
     )
-  } | filter {|x| $x} | length
+  } | length
