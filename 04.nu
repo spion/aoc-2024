@@ -1,3 +1,5 @@
+#!/usr/bin/env nu
+
 use std repeat
 
 def get_at [coord] {
@@ -26,6 +28,7 @@ def each_coordinate [arr f] {
   } | flatten
 }
 
+
 def solve1 [arr] {
   each_coordinate $arr {|c|
     if ($arr | get_at $c) == "X" {
@@ -46,7 +49,16 @@ def solve2 [arr] {
   } | math sum
 }
 
+def solution_list [] { ["first", "second"] }
 
-let arr = cat | split row "\n" | each {split chars}
-
-solve2 $arr
+# Computes the day 04 solution from stdin
+def main [
+  --solution: string@solution_list # Which solution to compute
+] {
+  let arr = cat | split row "\n" | each {split chars}
+  if $solution == "first" {
+    solve1 $arr
+  } else {
+    solve2 $arr
+  }
+}
