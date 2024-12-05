@@ -1,9 +1,8 @@
-
+#!/usr/bin/env nu
 
 def is_sorted [list: list<any>] {
   $list | zip ($list | skip 1) | all {|v| $v.0 <= $v.1 }
 }
-
 
 def toplogical_rank [row all_links] {
 
