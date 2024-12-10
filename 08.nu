@@ -1,4 +1,3 @@
-
 let map = cat | lines | each { split chars }
 let h = $map | length
 let w = $map | get 0 | length
@@ -7,11 +6,9 @@ def in-bounds [loc] {
   $loc.row >= 0 and $loc.row < $h and $loc.col < $w and $loc.col >= 0
 }
 
-
 def antinodes1 [a1, a2] {
   [{row: ($a1.row - $a2.row + $a1.row), col: ($a1.col - $a2.col + $a1.col)}]
 }
-
 
 def antinodes2 [a1, a2] {
   0.. | each {|dist|
@@ -29,9 +26,8 @@ def main [
   --solution: string@solution_list # Which solution to compute
 ] {
 
-
   let data = $map | enumerate | each {|r|
-  $r.item | enumerate | each {|c| {row: $r.index, col: $c.index, kind: $c.item} }
+    $r.item | enumerate | each {|c| {row: $r.index, col: $c.index, kind: $c.item} }
   } | flatten
 
   let antennas = $data | where kind != '.'
