@@ -1,23 +1,6 @@
-
-function infinityStone(stone: bigint, depth: number, wrapper = x => x) {
-  if (depth == 0) return 1;
-  if (stone == 0n) return infinityStone(1n, depth - 1);
-
-  let stringStone = stone.toString();
-  let sLen = stringStone.length;
-  if (sLen % 2 == 0) {
-    let splitPoint = sLen / 2;
-    let s1 = BigInt(stringStone.substring(0, splitPoint));
-    let s2 = BigInt(stringStone.substring(splitPoint));
-    return infinityStone(s1, depth - 1) + infinityStone(s2, depth - 1);
-  } else {
-    return infinityStone(stone * 2024n, depth - 1);
-  }
-}
-
 let infinityStoneCache = new Array(75).fill(0).map(x =>  new Map<bigint, number>());
 
-let minCacheDepth = 20;
+let minCacheDepth = 10;
 
 function cachedInfinityStone(stone: bigint, depth: number) {
   if (depth == 0) return 1;
@@ -57,3 +40,5 @@ function infinityStones(inputs: string) {
   return inputs.split(" ").map(s => cachedInfinityStone(BigInt(s), 75)).reduce((a, b) => a + b);
 }
 
+
+console.log(infinityStones("872027 227 18 9760 0 4 67716 9245696"))
