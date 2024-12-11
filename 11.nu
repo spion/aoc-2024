@@ -2,6 +2,7 @@ stor reset
 # stor create --table-name "cache" --columns {depth: int, key: int, val: int}
 stor open | query db "create table cache (depth, stone, value, PRIMARY KEY (depth, stone))"
 
+let cache_depth = 5
 
 def infinity_stone [stone, in_depth] {
   if $in_depth == 0 { return 1 }
@@ -9,7 +10,7 @@ def infinity_stone [stone, in_depth] {
   let depth = $in_depth - 1
   if $stone == 0 { return (infinity_stone 1 $depth) }
 
-  if ($depth > 10) {
+  if ($depth > $cache_depth) {
     let res = stor open |
       query db "select value from cache where (depth = ?) and (stone = ?)" -p [$depth, $stone]
 
@@ -24,11 +25,15 @@ def infinity_stone [stone, in_depth] {
     let s1 = $string_stone | str substring 0..($split_point - 1) | into int
     let s2 = $string_stone | str substring ($split_point).. | into int
     let res = ((infinity_stone $s1 $depth) + (infinity_stone $s2 $depth))
-    if ($depth > 10) { stor insert -t cache -d {depth: $depth, stone: $stone, value: $res} }
+    if ($depth > $cache_depth) {
+      stor insert -t cache -d {depth: $depth, stone: $stone, value: $res}
+    }
     return $res
   } else {
     let res = (infinity_stone ($stone * 2024) $depth)
-    if ($depth > 10) { stor insert -t cache -d {depth: $depth, stone: $stone, value: $res} }
+    if ($depth > $cache_depth) {
+      stor insert -t cache -d {depth: $depth, stone: $stone, value: $res}
+    }
     return $res
   }
 }
