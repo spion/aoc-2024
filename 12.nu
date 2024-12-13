@@ -82,24 +82,6 @@ def perimeter_pricing_pt1 [items, map] {
 
 }
 
-def vertex_maker_count [items, $map = null] {
-  let items_len = $items | length
-  if $items_len == 4 { return 4 } # lonely square
-  if $items_len == 3 { return 2 } # 3-edges
-  if ($items_len == 2) {
-    if ($items.0.row != $items.1.row) and ($items.0.col != $items.1.col) {
-      if ($map != null) {
-        let inside_value = $items.0.item
-        let i1 = $map | get_at $items.0.row $items.1.col
-        let i2 = $map | get_at $items.1.row $items.0.col
-        if ($i1.item != $inside_value) and ($i2.item != $inside_value) { return 0 }
-      }
-      return 1
-    }
-  }
-  0
-}
-
 # 860980 is too high
 
 # 858215 too high
@@ -148,18 +130,6 @@ def perimeter_pricing_pt2 [items, map] {
 
   return ($lines_h + $lines_v)
 
-
-
-  # $sides | group-by --to-table {|v| $v.inside.col }
-
-  # let convex_verteces = $sides | group-by --to-table {|v| $"($v.inside.row),($v.inside.col)"} |
-  #   each {|v| vertex_maker_count ($v.items | get outside) } | math sum
-  # let reflex_verteces = $sides | group-by --to-table {|v| $"($v.outside.row),($v.outside.col)"} |
-  #   each {|v| vertex_maker_count ($v.items | get inside) $map } | math sum
-
-  # print -e $"($convex_verteces); ($reflex_verteces)"
-
-  # ($reflex_verteces | math sum) + ($convex_verteces | math sum)
 }
 
 def solution_list [] { ["first", "second"] }
