@@ -1,0 +1,104 @@
+<script>
+  // cat | lines | parse 'p={px},{py} v={vx},{vy}' | into int px py vx vy |
+  // each {|r|
+
+  //   let x = ($r.px + $r.vx * $t) mod $dim.x
+  //   let y = ($r.py + $r.vy * $t) mod $dim.y
+
+  //   if $x == $mid.x or $y == $mid.y {
+  //     null
+  //   } else {
+  //     $"($x < $mid.x),($y < $mid.y)"
+  //   }
+  // } | uniq --count | get count | math product
+
+  let dim = {x: 101, y: 103}
+  async function create() {
+    let data = await fetch('./data/14-real.txt').then(r => r.text());
+    let robots = data.split("\n").map(row => {
+      // console.log(row);
+      let parsedRobot = row.match(/p=(-?\d+),(-?\d+) v=(-?\d+),(-?\d+)/)
+      // console.log(parsedRobot);
+      if (!parsedRobot) return null
+
+      let [_, px, py, vx, vy] = parsedRobot;
+      return {px: parseFloat(px), py: parseFloat(py), vx: parseFloat(vx), vy: parseFloat(vy)}
+    }).filter(r => r != null);
+
+    // console.log(robots);
+
+    let ctx = document.getElementById("map").getContext("2d");
+
+    let range = document.getElementById("t");
+
+    function robotsAtTime(t) {
+      return robots.map(robot => {
+        let x = (t * dim.x + robot.px + robot.vx * t) % dim.x
+        let y = (t * dim.y + robot.py + robot.vy * t) % dim.y
+        return {x, y}
+      });
+    }
+
+    function densityVariability(robotsAtTime, partitioning) {
+      let densitySquares = new Array(partitioning).fill(0)
+        .map(() => new Array(partitioning).fill(0));
+
+      for (let robot of robotsAtTime) {
+        let squareX = Math.floor(robot.x / (dim.x / partitioning));
+        let squareY = Math.floor(robot.y / (dim.y / partitioning));
+        densitySquares[squareX][squareY]++;
+      }
+
+      let variability = 0;
+      for (let i1 of densitySquares.flat()) {
+        for (let i2 of densitySquares.flat()) {
+          variability += Math.abs(i1 - i2) ** 2
+        }
+      }
+
+      return variability
+    }
+
+    range.addEventListener("input", () => {
+      console.log(range.value);
+      let t = parseFloat(range.value);
+      let robsT = robotsAtTime(t);
+      console.log(t, "variability", densityVariability(robsT, 10));
+
+      ctx.clearRect(0, 0, 1010, 1030);
+
+      ctx.fillStyle = "black";
+      for (let robot of robsT) {
+        ctx.fillRect(robot.x*10, robot.y*10, 10, 10);
+      }
+    })
+
+    document.getElementById("autonext").addEventListener("click", () => {
+      let t = parseFloat(range.value) + 1;
+      let goodBatch = false;
+      while (!goodBatch && t < 25000) {
+        goodBatch = true;
+
+        let dv = densityVariability(robotsAtTime(t), 10);
+        if (dv < 300000) {
+          goodBatch = false
+        }
+        if (!goodBatch) {
+          t++;
+        }
+      }
+      console.log(t, "variability", densityVariability(robotsAtTime(t), 10));
+      range.value = t;
+      range.dispatchEvent(new Event("input"));
+    });
+  }
+
+
+
+  create();
+</script>
+<button id="autonext">Automatically find xmass treeish like</button>
+<input type="range" id="t" min="0" max="22000" value="1" style="width:1000px">
+
+<canvas id="map" width="1010" height="1030">
+</canvas>
