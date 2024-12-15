@@ -1,0 +1,1 @@
+cat | str replace --all '#' '##' | str replace --all 'O' '[]' | str replace --all '.' '..' | str replace '@' '@.'
