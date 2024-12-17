@@ -133,13 +133,13 @@ fn main() {
 
     println!("{:?}", visited_path_seats.len());
 
-    let mut visited_map = map.clone();
+    // let mut visited_map = map.clone();
 
-    for (x, y) in visited_path_seats {
-        visited_map[y][x] = 'O';
-    }
+    // for (x, y) in visited_path_seats {
+    //     visited_map[y][x] = 'O';
+    // }
 
-    for row in visited_map {
-        println!("{}", row.iter().collect::<String>());
-    }
+    // for row in visited_map {
+    //     println!("{}", row.iter().collect::<String>());
+    // }
 }
