@@ -1,0 +1,9 @@
+[package]
+name = "s-17-rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+regex = "^1.11.1"
+rayon = "^1.7.0"
