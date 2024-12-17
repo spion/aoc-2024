@@ -14,8 +14,14 @@ fn find_in_map(map: &Map, chr: char) -> (usize, usize, char) {
     panic!("no such char");
 }
 
+fn opposite_directions(dir1: char, dir2: char) -> bool {
+    (dir1 == 'v' && dir2 == '^')
+        || (dir1 == '^' && dir2 == 'v')
+        || (dir1 == '>' && dir2 == '<')
+        || (dir1 == '<' && dir2 == '>')
+}
+
 fn get_neighbors(map: &Map, (x, y, dir): (usize, usize, char)) -> Vec<((usize, usize, char), u64)> {
-    let mut neigh = vec![];
     let candidates = vec![
         (x, y + 1, 'v'),
         (x - 1, y, '<'),
@@ -23,25 +29,25 @@ fn get_neighbors(map: &Map, (x, y, dir): (usize, usize, char)) -> Vec<((usize, u
         (x + 1, y, '>'),
     ];
 
+    let mut neigh = vec![];
+
     for (xc, yc, dir_c) in candidates {
         let neigh_loc = map.get(yc).and_then(|x| x.get(xc));
 
         match (neigh_loc, dir, dir_c) {
-            (None, _, _) => continue,
-            (Some('.'), 'S', _) => neigh.push(((xc, yc, dir_c), 1)),
-            (Some('.'), dx, dy) if dx == dy => neigh.push(((xc, yc, dir_c), 1)),
-            (Some('.'), _, _) => neigh.push(((xc, yc, dir_c), 1001)),
-            (Some('E'), dx, dy) if dx == dy => neigh.push(((xc, yc, dir_c), 1)),
-            (Some('E'), _, _) => neigh.push(((xc, yc, dir_c), 1001)),
-            (Some(_), _, _) => continue,
+            (None, _, _) => {}
+            (Some('.' | 'E'), 'S', '>') => neigh.push(((xc, yc, dir_c), 1)),
+            (Some('.' | 'E'), 'S', '<') => neigh.push(((xc, yc, dir_c), 2001)),
+            (Some('.' | 'E'), 'S', _) => neigh.push(((xc, yc, dir_c), 1001)),
+            (Some('.' | 'E'), dx, dy) if dx == dy => neigh.push(((xc, yc, dir_c), 1)),
+            (Some('.' | 'E'), dx, dy) if opposite_directions(dx, dy) => {}
+            (Some('.' | 'E'), _, _) => neigh.push(((xc, yc, dir_c), 1001)),
+            (Some(_), _, _) => {}
         }
     }
 
     neigh
 }
-
-// Note: this program gives wrong values RANDOMLY, and its off-by-one even when its correct
-// Its unclear what the problem is and I don't feel like debugging it
 
 fn main() {
     let l = io::stdin().lines().collect::<Result<Vec<_>, _>>().unwrap();
@@ -98,11 +104,12 @@ fn main() {
 
     let find_end = from
         .iter()
-        .find(|x| x.0 .0 == end.0 && x.0 .1 == end.1 + 1)
+        .filter(|x| x.0 .0 == end.0 && x.0 .1 == end.1)
+        .min_by_key(|x| x.1 .1)
         .unwrap()
         .1;
 
-    println!("{:?}", find_end);
+    println!("{:?}", find_end.1);
 
     let mut visited_path_seats: HashSet<(usize, usize)> = HashSet::from([(end.0, end.1)]);
 
@@ -111,18 +118,28 @@ fn main() {
 
     while backwards_iterators.len() > 0 {
         visited_path_seats.extend(backwards_iterators.iter().map(|x| (x.0, x.1)));
-        if (backwards_iterators.len() == 1) && (backwards_iterators.iter().next().unwrap().2 == 'S')
-        {
-            break;
-        }
 
         let new_backwards_iterators = backwards_iterators
             .iter()
             .flat_map(|x| from.get(x).unwrap().0.clone())
             .collect::<HashSet<_>>();
 
+        if (backwards_iterators.len() == 1) && (backwards_iterators.iter().next().unwrap().2 == 'S')
+        {
+            break;
+        }
         backwards_iterators = new_backwards_iterators;
     }
 
     println!("{:?}", visited_path_seats.len());
+
+    let mut visited_map = map.clone();
+
+    for (x, y) in visited_path_seats {
+        visited_map[y][x] = 'O';
+    }
+
+    for row in visited_map {
+        println!("{}", row.iter().collect::<String>());
+    }
 }
