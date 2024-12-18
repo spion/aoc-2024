@@ -10,8 +10,6 @@ def bfs [pos, movefn, goalfn] {
 
     let found = $new_candidates | where {|v| do $goalfn $v} | is-not-empty
 
-
-    print -e $"Count: ($iter.count)"
     if $found {
       {out: ($iter.count + 1)}
     } else if ($new_candidates | is-not-empty) {
