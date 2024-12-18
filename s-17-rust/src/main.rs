@@ -64,42 +64,47 @@ fn step(c: &mut Computer) -> Option<()> {
     Some(())
 }
 
-// fn combo_to_str(operand: u8) -> String {
-//     if operand < 4 {
-//         operand.to_string()
-//     } else {
-//         match operand {
-//             4 => "a",
-//             5 => "b",
-//             6 => "c",
-//             _ => panic!("Invalid operand"),
-//         }
-//         .to_string()
-//     }
-// }
+fn combo_to_str(operand: u8) -> String {
+    if operand < 4 {
+        operand.to_string()
+    } else {
+        match operand {
+            4 => "a",
+            5 => "b",
+            6 => "c",
+            _ => panic!("Invalid operand"),
+        }
+        .to_string()
+    }
+}
 
-// fn operand_to_str(op: u8, operand: u8) -> String {
-//     match op {
-//         ADV | BDV | CDV | OUT | BST => combo_to_str(operand),
-//         _ => operand.to_string(),
-//     }
-// }
+fn operand_to_str(op: u8, operand: u8) -> String {
+    match op {
+        ADV | BDV | CDV | OUT | BST => combo_to_str(operand),
+        _ => operand.to_string(),
+    }
+}
 
-// fn print_op(op: u8, operand: u8) -> String {
-//     let op_str = operand_to_str(op, operand);
-//     match op {
-//         ADV => format!("c.a = c.a >> c({})", op_str),
-//         BDV => format!("c.b = c.a >> c({})", op_str),
-//         CDV => format!("c.c = c.a >> c({})", op_str),
-//         BXL => format!("c.b = c.b ^ {}", op_str),
-//         BST => format!("c.b = c({}) & 0b111", op_str),
-//         JNZ => format!("jnz c({})", op_str),
-//         BXC => format!("c.b = c.b ^ c.c"),
-//         OUT => format!("out <- ({} & 0b111)", op_str),
+fn print_op(c: &Computer) -> String {
+    if c.ip >= c.instructions.len() - 1 {
+        return "".to_string();
+    }
+    let op = c.instructions[c.ip];
+    let operand = c.instructions[c.ip + 1];
+    let op_str = operand_to_str(op, operand);
+    match op {
+        ADV => format!("c.a = c.a >> c({})", op_str),
+        BDV => format!("c.b = c.a >> c({})", op_str),
+        CDV => format!("c.c = c.a >> c({})", op_str),
+        BXL => format!("c.b = c.b ^ {}", op_str),
+        BST => format!("c.b = c({}) & 0b111", op_str),
+        JNZ => format!("jnz c({})", op_str),
+        BXC => format!("c.b = c.b ^ c.c"),
+        OUT => format!("out <- ({} & 0b111)", op_str),
 
-//         _ => panic!("Invalid opcode"),
-//     }
-// }
+        _ => panic!("Invalid opcode"),
+    }
+}
 
 fn main() {
     let items = io::stdin()
@@ -126,7 +131,10 @@ fn main() {
 
     {
         let mut c = initial_computer.clone();
-        while let Some(_) = step(&mut c) {}
+        println!("{}", print_op(&c));
+        while let Some(_) = step(&mut c) {
+            println!("{}", print_op(&c));
+        }
 
         println!(
             "{}",
@@ -138,8 +146,12 @@ fn main() {
         );
     }
 
+    let total_size = initial_computer.instructions.len();
+
+    let bruteforce_chunk_size = total_size / 2 - 1;
+
     let mut lower_candidates: Vec<u64> = vec![];
-    for k in 0..100_000_000 {
+    for k in 0..(1 << (bruteforce_chunk_size + 2) * 3) {
         let mut c2 = initial_computer.clone();
         c2.a = k;
         let mut last_len = 0;
@@ -153,17 +165,19 @@ fn main() {
             if c2.out[last_len - 1] != c2.instructions[last_len - 1] {
                 break;
             }
-            if last_len >= 9 {
-                lower_candidates.push(k);
+            if last_len >= bruteforce_chunk_size + 1 {
+                let actual_a = k & ((1 << bruteforce_chunk_size * 3) - 1);
+                println!("A0: {} ({}) :: {}", actual_a, k, last_len);
+                lower_candidates.push(actual_a);
                 break;
             }
         }
     }
     let mut upper_candidates: Vec<u64> = vec![];
-    for k in 0..10_000_000 {
+    for k in 0..(1 << ((total_size - bruteforce_chunk_size + 1) * 3)) {
         let mut c2 = initial_computer.clone();
         c2.a = k;
-        c2.out = c2.instructions[0..9].to_vec();
+        c2.out = c2.instructions[0..bruteforce_chunk_size].to_vec();
         let mut last_len = c2.out.len();
         while let Some(_) = step(&mut c2) {
             if last_len == c2.out.len() {
@@ -175,6 +189,7 @@ fn main() {
                 break;
             }
             if last_len >= c2.instructions.len() {
+                println!("A1: {}", k);
                 upper_candidates.push(k);
                 break;
             }
@@ -184,9 +199,12 @@ fn main() {
     upper_candidates
         .iter()
         .flat_map(|u| lower_candidates.iter().map(move |l| (u, l)))
-        .skip_while(|(u, l)| {
+        .filter_map(|(u, l)| {
             let mut c2 = initial_computer.clone();
-            let a_cand = (**u << 9 * 3) + **l;
+            let upper_portion = *u << (bruteforce_chunk_size * 3);
+            let lower_portion = (*l) & ((1 << bruteforce_chunk_size * 3) - 1);
+            let a_cand = upper_portion + lower_portion;
+
             c2.a = a_cand;
             let mut last_len = 0;
             while let Some(_) = step(&mut c2) {
@@ -197,16 +215,14 @@ fn main() {
                 last_len = c2.out.len();
 
                 if c2.out[last_len - 1] != c2.instructions[last_len - 1] {
-                    return true;
+                    return None;
                 }
                 if c2.out.len() >= c2.instructions.len() {
-                    return false;
+                    return Some(a_cand);
                 }
             }
-            true
+            None
         })
         .take(1)
-        .for_each(|(u, l)| {
-            println!("A: {}", (u << 9 * 3) + l);
-        });
+        .for_each(|a| println!("A: {}", a));
 }
