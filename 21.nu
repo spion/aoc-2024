@@ -55,7 +55,7 @@ def robot_priced_moves [previous_pricing] {
     $map | where from == $from.to | each {|dest|
       let p1 = $previous_pricing
         | where from == $from.via and to == $dest.via
-        | first | get price
+        | get price | math min
       $dest | merge {price: $p1}
     }
   }
