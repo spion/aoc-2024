@@ -1,7 +1,7 @@
 let numpad_links = [
   ["-", ["0", "A"]],
   ["-", ["1", "2", "3"]],
-  ["-", ["4","5","6"]],
+  ["-", ["4", "5", "6"]],
   ["-", ["7", "8", "9"]],
   ["|", ["9", "6", "3", "A"]],
   ["|", ["8", "5", "2", "0"]],
@@ -9,7 +9,7 @@ let numpad_links = [
 ];
 
 let navpad_links = [
-  ["-", ["<","v",">"]],
+  ["-", ["<", "v", ">"]],
   ["-", ["^", "A"]]
   ["|", ["^", "v"]],
   ["|", ["A", ">"]]
@@ -111,12 +111,19 @@ def dijkstra [start map move_price_fn actuation_price_fn] {
 let navpad_map = make_map $navpad_links
 let numpad_map = make_map $numpad_links
 
+print -e ($numpad_map | sort-by from to via)
+
 
 def human_step [map] {
   {|previous_pricing|
-    $map | get from | uniq | each {|f|
+    let pricing = $map | get from | uniq | each {|f|
       dijkstra $f $map (human_priced_moves $previous_pricing) (human_actuation_price $previous_pricing)
     } | flatten
+
+    $pricing | group-by --to-table {|c| $"($c.from) ($c.to)"} | each {|g|
+      let min_price = $g.items | get price | math min
+      {from: $g.items.0.from, to: $g.items.0.to, price: $min_price}
+    } | sort-by price from to
   }
 }
 
@@ -129,7 +136,7 @@ def robot_step [map] {
     $pricing | group-by --to-table {|c| $"($c.from) ($c.to)"} | each {|g|
       let min_price = $g.items | get price | math min
       {from: $g.items.0.from, to: $g.items.0.to, price: $min_price}
-    }
+    } | sort-by price from to
   }
 }
 
@@ -150,8 +157,10 @@ def solve [pricing] {
     let code = "A" + $l
 
     let movements = $code | split chars | zip ($code | split chars | skip 1) | each {|move|
-      $pricing | where from == $move.0 and to == $move.1 | get price | first
+      $pricing | where from == $move.0 and to == $move.1 | get price | math min
     }
+
+    print -e Code:($l):($movements)
 
     ($movements | math sum) * ($l | str replace 'A' '' | into int)
   } | math sum
@@ -163,6 +172,6 @@ let s1 = $inputs  | solve (calculate_pricing 2)
 
 print s1 $s1
 
-let s2 = $inputs | solve (calculate_pricing 25)
+# let s2 = $inputs | solve (calculate_pricing 25)
 
-print s2 $s2
+# print s2 $s2

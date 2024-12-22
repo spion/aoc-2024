@@ -18,7 +18,7 @@ fn secret_number(seed: u64) -> u64 {
 
 fn encode_sequence(running_sequence: u32, diff: i32) -> u32 {
   let diff_part = (diff + 9) as u32; // max 18, which can be put in 5 bits
-  ((running_sequence << 5) + diff_part) & ((1 << 20) - 1) // keep only 4*5 bits
+  ((running_sequence << 5) | diff_part) & ((1 << 20) - 1) // keep only 4*5 bits
 }
 
 fn main() {
