@@ -16,16 +16,13 @@ fn secret_number(seed: u64) -> u64 {
   res
 }
 
-fn encode_sequence(running_sequence: u16, diff: i8) -> u16 {
-  let mut rs = running_sequence;
-  let udiff = ((diff + 9) & 0b1111) as u16; // max 18, which can be put in 4 bits
-  rs = (rs << 4) | udiff;
-  // We only retain 4*4 = 16 bits due to u16, so no need to prune
-  rs
+fn encode_sequence(running_sequence: u32, diff: i32) -> u32 {
+  let diff_part = (diff + 9) as u32; // max 18, which can be put in 5 bits
+  ((running_sequence << 5) + diff_part) & ((1 << 20) - 1) // keep only 4*5 bits
 }
 
 fn main() {
-  let mut best_result: HashMap<(u16, u16), u8> = HashMap::new();
+  let mut best_result: HashMap<(u32, u16), u8> = HashMap::new();
 
   let result = io::stdin()
     .lines()
@@ -37,11 +34,13 @@ fn main() {
       for _ in 0..2000 {
         let before = evolving;
         evolving = secret_number(evolving);
-        let bananas = (evolving % 10) as u8;
-        let banana_diff = (bananas as i8) - ((before % 10) as i8);
-        run_seq = encode_sequence(run_seq, banana_diff);
+        let bananas = evolving % 10;
 
-        best_result.entry((run_seq, ix as u16)).or_insert(bananas);
+        let banana_diff = (bananas as i32) - ((before % 10) as i32);
+        run_seq = encode_sequence(run_seq, banana_diff);
+        best_result
+          .entry((run_seq, ix as u16))
+          .or_insert(bananas as u8);
       }
       evolving
     })
@@ -50,7 +49,7 @@ fn main() {
   println!("Part 1: {}", result);
 
   // Which sequence is the best?
-  let mut sum_bananas: HashMap<u16, u64> = HashMap::new();
+  let mut sum_bananas: HashMap<u32, u64> = HashMap::new();
   for ((run_seq, _), bananas) in best_result.iter() {
     let e = sum_bananas.entry(*run_seq).or_insert(0);
     *e += *bananas as u64;
