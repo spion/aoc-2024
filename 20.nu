@@ -1,18 +1,24 @@
+use structs *
+
 let map = cat | lines | each { split chars }
 
 def bfs [pos, movefn, goalfn] {
+  # let visited = hset create
+
   generate {|iter|
 
     let new_visited = $iter.visited ++ $iter.candidates | uniq
+    # $visited | hset add_many $iter.candidates
 
     let new_candidates = $iter.candidates |
-      each {|c| do $movefn $c} | flatten | uniq |
-      filter {|c| $new_visited | where $it == $c | is-empty }
+      each {|c| do $movefn $c} | flatten | uniq | # filter {|c| $visited | hset lacks $c }
+        filter {|c| $new_visited | where $it == $c | is-empty }
+
 
 
     let found = $new_candidates | where {|v| do $goalfn $v} | is-not-empty
 
-    # print -e $iter.count
+    print -e $iter.count
     if $found {
       {out: ($iter.count + 1)}
     } else if ($new_candidates | is-not-empty) {
@@ -31,6 +37,8 @@ def bfs [pos, movefn, goalfn] {
       {out: [{x: $pos.x, y: $pos.y, count: 0}]}
     }
   } {count: 0, candidates: [$pos], visited: []}
+
+  # $visited | hset drop
 }
 
 def find_item [item] {
@@ -48,15 +56,6 @@ def get_at [row col] {
   if $item == null { return {item: null} }
 
   {row: $row, col: $col, item: $item}
-}
-
-def cheat_at [y x min_dist max_dist] {
-  0..3 | each {|dx|
-    0..3 | each {|dy|
-      let d = $dx + $dy
-      if $d >= $min_dist and $d <= $max_dist { [{y: ($y + $dy), x: ($x + $dx)}] } else { [] }
-    } | flatten
-  } | flatten
 }
 
 def movefn [] {
@@ -83,7 +82,7 @@ let end = $map | find_item 'E'
 
 let stats = bfs $start { movefn } { goalfn } | flatten
 
-# print -e ($stats | sort-by y | sort-by x)
+print -e ($stats | sort-by y | sort-by x)
 
 $stats | each {|c1|
   $stats | each {|c2|
