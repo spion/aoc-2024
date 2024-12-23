@@ -172,6 +172,6 @@ let s1 = $inputs  | solve (calculate_pricing 2)
 
 print s1 $s1
 
-# let s2 = $inputs | solve (calculate_pricing 25)
+let s2 = $inputs | solve (calculate_pricing 25)
 
-# print s2 $s2
+print s2 $s2
