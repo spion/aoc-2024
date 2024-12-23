@@ -21,7 +21,7 @@ fn main() {
 
   let links_set = links_by_computer
     .iter()
-    .flat_map(|(k, v)| v.iter().cloned().map(|v| (k.clone(), v)))
+    .flat_map(|(k, v)| v.iter().map(move |v| (k, v)))
     .collect::<HashSet<_>>();
 
   let computers = links_by_computer.keys().cloned().collect::<Vec<_>>();
@@ -36,7 +36,7 @@ fn main() {
           let has_combo = linked.iter().combinations(l).find(|c| {
             for i in 0..c.len() {
               for j in (i + 1)..c.len() {
-                if !links_set.contains(&(c[i].clone(), c[j].clone())) {
+                if !links_set.contains(&(c[i], c[j])) {
                   return false;
                 }
               }
