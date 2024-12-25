@@ -20,19 +20,21 @@ export def "htable create" [] {
   $db | query db "create table if not exists htable_entries (
     id, key, val, primary key (id, key)
   );"
-  $in.db | query db $create_table | first | insert db $db
+  $db | query db $create_table | first | insert db $db
 }
 
 export def "htable set" [key val] {
+  let ht = $in
   let k = $key | to json -r
   let v = $val | to json -r
-  $in.db | query db $add_entry --params [$in.id, $k, $v]
-  $in.db | query db $update_entry --params [$v, $in.id, $k]
+  $ht.db | query db $add_entry --params [$ht.id, $k, $v]
+  $ht.db | query db $update_entry --params [$v, $ht.id, $k]
 }
 
 export def "htable get" [key] {
+  let ht = $in
   let k = $key | to json -r
-  let vals = stor open | query db $get_entry | get val
+  let vals = $ht.db | query db $get_entry --params [$ht.id, $k] | get val
   if ($vals | is-empty) { return null }
   $vals.0 | from json
 }
@@ -55,7 +57,8 @@ export def "htable values" [] {
 }
 
 export def "htable drop" [] {
-  $in.db | query db "delete from htable_entries where id = ?" --params [$in.id]
+  let ht = $in
+  $ht.db | query db "delete from htable_entries where id = ?" --params [ $ht.id ]
 }
 
 
