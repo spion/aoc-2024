@@ -24,7 +24,9 @@ fn main() {
     .flat_map(|(k, v)| v.iter().map(move |v| (k, v)))
     .collect::<HashSet<_>>();
 
-  let computers = links_by_computer.keys().cloned().collect::<Vec<_>>();
+  let mut computers = links_by_computer.keys().cloned().collect::<Vec<_>>();
+
+  computers.sort();
 
   let full_links = computers
     .iter()
@@ -54,8 +56,7 @@ fn main() {
             )
           })
         })
-        .take(1)
-        .collect::<Vec<_>>();
+        .take(1);
       res
     })
     .max_by_key(|(l, _)| *l)
